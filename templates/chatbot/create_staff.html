@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Staff Account | QA Academics</title>
+    <link rel="stylesheet" href="{% static 'chatbot/style.css' %}">
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="logo">
+        <span class="qa-badge">QA</span>
+        <span class="logo-text">Academics</span>
+    </a>
+    <div class="nav-links">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'dashboard' %}">Dashboard</a>
+        <a href="{% url 'students' %}">Students</a>
+        <a href="{% url 'manage_marks' %}">Marks</a>
+        <a href="{% url 'analysis' %}">Analytics</a>
+        <a href="{% url 'reports' %}">Reports</a>
+        <a href="{% url 'create_staff' %}" class="active">Staff Accounts</a>
+    </div>
+    <div class="nav-auth">
+        <span class="user-role-badge admin">👑 Admin</span>
+        <a href="{% url 'logout' %}" class="secondary-button" style="padding:7px 16px; font-size:13.5px;">Logout</a>
+    </div>
+</nav>
+
+<main class="dashboard-page">
+
+    <div class="dashboard-title">
+        <div>
+            <h1>👤 Create Staff Account</h1>
+            <p>Create Teacher or Admin accounts. Only administrators can access this page.</p>
+        </div>
+    </div>
+
+    <!-- Security Banner -->
+    <div style="display:flex; align-items:center; gap:12px; background:#fdf4ff; border:1px solid #f5d0fe; border-radius:10px; padding:14px 18px; margin-bottom:24px;">
+        <span style="font-size:24px;">🔐</span>
+        <div>
+            <strong style="color:#a21caf;">Admin-Only Zone</strong>
+            <p style="margin:0; font-size:13px; color:#64748b;">This page is restricted to Administrators only. All account creations are logged.</p>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error" style="margin-bottom:20px;">⚠️ {{ error }}</div>
+    {% endif %}
+    {% if success %}
+    <div class="alert alert-success" style="margin-bottom:20px;">✅ {{ success }}</div>
+    {% endif %}
+
+    <div style="display:grid; grid-template-columns:1fr 1.4fr; gap:24px; align-items:start;">
+
+        <!-- Create Form -->
+        <div class="chart-card">
+            <div class="chart-header" style="margin-bottom:20px;">
+                <h2>New Staff Account</h2>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label>Account Type</label>
+                    <select name="role" id="roleSelect" required onchange="updateRolePreview(this.value)">
+                        <option value="teacher">👨‍🏫 Teacher</option>
+                        <option value="admin">👑 Administrator</option>
+                    </select>
+                </div>
+
+                <!-- Role preview badge -->
+                <div id="roleBadgePreview" style="margin-bottom:14px; padding:10px 14px; border-radius:8px; background:#eff6ff; border:1px solid #bfdbfe; font-size:13px; color:#1d4ed8;">
+                    👨‍🏫 <strong>Teacher</strong> — Can view students, manage marks, generate reports. Cannot delete students or subjects.
+                </div>
+
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" placeholder="Full name (optional)">
+                </div>
+
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" placeholder="Login username" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" placeholder="staff@qa.edu">
+                </div>
+
+                <div class="form-group">
+                    <label>Password <span style="color:var(--text-muted); font-size:12px;">(min. 6 chars)</span></label>
+                    <input type="password" name="password" placeholder="Temporary password" required minlength="6">
+                </div>
+
+                <button type="submit" class="primary-button" style="width:100%;">
+                    ✅ Create Account
+                </button>
+            </form>
+        </div>
+
+        <!-- Existing Staff List -->
+        <div class="chart-card">
+            <div class="chart-header" style="margin-bottom:16px;">
+                <h2>Existing Staff Accounts</h2>
+                <span>{{ staff_users|length }} account{{ staff_users|length|pluralize }}</span>
+            </div>
+
+            {% if staff_users %}
+            <div class="student-table-card" style="margin:0; box-shadow:none; padding:0;">
+                <table class="student-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for staff in staff_users %}
+                        <tr>
+                            <td><strong>{{ staff.username }}</strong></td>
+                            <td style="color:var(--text-muted); font-size:13px;">{{ staff.email|default:"—" }}</td>
+                            <td>
+                                {% if staff.profile.role == 'admin' %}
+                                    <span class="user-role-badge admin">👑 Admin</span>
+                                {% else %}
+                                    <span class="user-role-badge teacher">👨‍🏫 Teacher</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="text-align:center; padding:30px; color:var(--text-muted);">
+                <p>No staff accounts yet.</p>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</main>
+
+<script>
+function updateRolePreview(role) {
+    const el = document.getElementById('roleBadgePreview');
+    if (role === 'admin') {
+        el.style.background = '#fdf4ff';
+        el.style.border = '1px solid #f5d0fe';
+        el.style.color = '#a21caf';
+        el.innerHTML = '👑 <strong>Administrator</strong> — Full access: add/delete students &amp; subjects, manage all marks, view all analytics, create staff accounts.';
+    } else {
+        el.style.background = '#eff6ff';
+        el.style.border = '1px solid #bfdbfe';
+        el.style.color = '#1d4ed8';
+        el.innerHTML = '👨‍🏫 <strong>Teacher</strong> — Can view students, manage marks, generate reports. Cannot delete students or subjects.';
+    }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,135 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students | QA Academics</title>
+    <link rel="stylesheet" href="{% static 'chatbot/style.css' %}">
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="logo">
+        <span class="qa-badge">QA</span>
+        <span class="logo-text">Academics</span>
+    </a>
+    <div class="nav-links">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'dashboard' %}">Dashboard</a>
+        <a href="{% url 'students' %}" class="active">Students</a>
+        <a href="{% url 'manage_marks' %}">Marks</a>
+        <a href="{% url 'analysis' %}">Analytics</a>
+        <a href="{% url 'reports' %}">Reports</a>
+    </div>
+    <div class="nav-auth">
+        {% if user.profile.role == 'admin' %}
+            <span class="user-role-badge admin">👑 Admin</span>
+        {% else %}
+            <span class="user-role-badge teacher">👨‍🏫 Teacher</span>
+        {% endif %}
+        <a href="{% url 'logout' %}" class="secondary-button" style="padding:7px 16px; font-size:13.5px;">Logout</a>
+    </div>
+</nav>
+
+<main class="dashboard-page">
+
+    <div class="dashboard-title">
+        <div>
+            <h1>🎓 Students</h1>
+            <p>View, search, and manage all student records.</p>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <form method="GET" style="display:flex; gap:8px;">
+                <input type="text" name="search" placeholder="Search name, ID, email..." value="{{ search }}"
+                    style="padding:8px 14px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; min-width:220px;">
+                <button type="submit" class="secondary-button">🔍 Search</button>
+            </form>
+            {% if is_admin %}
+            <a href="{% url 'add_student' %}" class="primary-button">+ Add Student</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% for message in messages %}
+    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+
+    <div class="student-table-card">
+        <table class="student-table">
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Attendance</th>
+                    <th>Marks %</th>
+                    <th>Total</th>
+                    <th>Grade</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>
+                        <span style="font-size:12px; font-family:monospace; color:var(--primary-dark); background:var(--primary-subtle); font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid var(--border-purple);">
+                            {{ student.student_id }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{% url 'student_detail' student.id %}" style="font-weight:600; color:var(--primary);">
+                            {{ student.name }}
+                        </a>
+                    </td>
+                    <td style="color:var(--text-muted); font-size:13px;">{{ student.email|default:"—" }}</td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span>{{ student.attendance }}%</span>
+                        </div>
+                    </td>
+                    <td><strong>{{ student.marks }}%</strong></td>
+                    <td style="font-size:13px; color:var(--text-muted);">{{ student.total_marks }} / {{ student.max_total_marks }}</td>
+                    <td>
+                        <span class="grade-badge grade-{{ student.grade }}">
+                            {{ student.grade|default:"N/A" }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <a href="{% url 'student_detail' student.id %}" class="action-btn view">👁 View</a>
+                            <a href="{% url 'student_marks' student.id %}" class="action-btn marks">✏️ Marks</a>
+                            {% if is_admin %}
+                            <a href="{% url 'edit_student' student.id %}" class="action-btn edit">📝 Edit</a>
+                            <a href="{% url 'delete_student' student.id %}"
+                               class="action-btn delete"
+                               onclick="return confirm('Delete {{ student.name }}? This cannot be undone.')">
+                               🗑 Delete
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="empty-table">
+                        {% if search %}
+                            No students found matching "<strong>{{ search }}</strong>".
+                        {% else %}
+                            No students added yet. {% if is_admin %}<a href="{% url 'add_student' %}">Add the first student →</a>{% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</main>
+
+</body>
+</html>

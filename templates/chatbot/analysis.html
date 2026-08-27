@@ -1,0 +1,286 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics | QA Academics</title>
+    <link rel="stylesheet" href="{% static 'chatbot/style.css' %}">
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="logo">
+        <span class="qa-badge">QA</span>
+        <span class="logo-text">Academics</span>
+    </a>
+    <div class="nav-links">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'dashboard' %}">Dashboard</a>
+        <a href="{% url 'students' %}">Students</a>
+        <a href="{% url 'analysis' %}" class="active">Analytics</a>
+        <a href="{% url 'prediction' %}">ML Prediction</a>
+        <a href="{% url 'reports' %}">Reports</a>
+    </div>
+    <div class="nav-auth">
+        {% if user.profile.role == 'admin' %}
+            <span class="user-role-badge admin">👑 Admin</span>
+        {% else %}
+            <span class="user-role-badge teacher">👨‍🏫 Teacher</span>
+        {% endif %}
+        <a href="{% url 'logout' %}" class="secondary-button" style="padding:7px 16px; font-size:13.5px;">Logout</a>
+    </div>
+</nav>
+
+<main class="dashboard-page">
+
+    <div class="dashboard-title">
+        <div>
+            <h1>📊 Performance Analytics</h1>
+            <p>Deep insights into student marks, grades, attendance, and subject performance.</p>
+        </div>
+    </div>
+
+    <!-- Live DB Stats -->
+    {% if statistics %}
+    <section class="stats-grid">
+        <div class="dashboard-stat-card">
+            <div class="stat-icon">👨‍🎓</div>
+            <div><p>Total Students</p><h2>{{ statistics.total_students }}</h2></div>
+        </div>
+        <div class="dashboard-stat-card">
+            <div class="stat-icon">📊</div>
+            <div><p>Average Marks</p><h2>{{ statistics.average_marks }}%</h2></div>
+        </div>
+        <div class="dashboard-stat-card">
+            <div class="stat-icon">📅</div>
+            <div><p>Avg Attendance</p><h2>{{ statistics.average_attendance }}%</h2></div>
+        </div>
+        <div class="dashboard-stat-card">
+            <div class="stat-icon">⭐</div>
+            <div><p>Highest Marks</p><h2>{{ statistics.highest_marks }}%</h2></div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- CSV Upload Section -->
+    <div class="chart-card" style="margin-bottom:24px;">
+        <div class="chart-header">
+            <h2>📂 Batch Dataset Analysis</h2>
+            <span>Upload a CSV file to analyze a batch of student records</span>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-error">⚠️ {{ error }}</div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:8px;">
+            {% csrf_token %}
+            <input type="file" name="csv_file" accept=".csv" required
+                style="padding:8px; border:1.5px dashed var(--border); border-radius:8px; flex:1; min-width:200px;">
+            <button type="submit" class="primary-button">📊 Upload & Analyze</button>
+        </form>
+    </div>
+
+    {% if statistics %}
+    <!-- Charts Section -->
+    <section class="charts-grid">
+
+        <!-- Marks Distribution -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2>Student Marks</h2>
+                <select class="chart-type-select" onchange="changeAnalysisChart('marksChart', this.value, marksChartData, 'Marks')">
+                    <option value="bar">Bar</option>
+                    <option value="line">Line</option>
+                </select>
+            </div>
+            <div style="position:relative; height:260px;">
+                <canvas id="marksChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Attendance Distribution -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2>Attendance</h2>
+                <select class="chart-type-select" onchange="changeAnalysisChart('attendanceChart', this.value, attendanceChartData, 'Attendance %')">
+                    <option value="line">Line</option>
+                    <option value="bar">Bar</option>
+                </select>
+            </div>
+            <div style="position:relative; height:260px;">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Grade Distribution -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2>Grade Distribution</h2>
+                <select class="chart-type-select" onchange="changeAnalysisChartObj('gradeChart', this.value, gradeChartData)">
+                    <option value="doughnut">Doughnut</option>
+                    <option value="pie">Pie</option>
+                    <option value="bar">Bar</option>
+                    <option value="polarArea">Polar Area</option>
+                </select>
+            </div>
+            <div style="position:relative; height:260px;">
+                <canvas id="gradeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Pass vs Fail -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2>Pass / Fail</h2>
+                <select class="chart-type-select" onchange="changeAnalysisChartObj('passFailChart', this.value, passFailChartData)">
+                    <option value="pie">Pie</option>
+                    <option value="doughnut">Doughnut</option>
+                    <option value="bar">Bar</option>
+                </select>
+            </div>
+            <div style="position:relative; height:260px;">
+                <canvas id="passFailChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Attendance vs Marks Scatter -->
+        <div class="chart-card" style="grid-column: span 2;">
+            <div class="chart-header">
+                <h2>Attendance vs Marks Correlation</h2>
+                <select class="chart-type-select" onchange="switchScatterChart(this.value)">
+                    <option value="scatter">Scatter</option>
+                    <option value="bubble">Bubble</option>
+                </select>
+            </div>
+            <div style="position:relative; height:300px;">
+                <canvas id="scatterChart"></canvas>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- Subject-wise Analysis -->
+    {% if subject_performance_data %}
+    <section style="margin-top:32px;">
+        <h2 style="margin-bottom:16px; font-size:18px;">📚 Subject Analysis</h2>
+        <div class="subject-cards-grid">
+            {% for sub in subject_performance_data %}
+            <div class="subject-stat-card">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                    <div>
+                        <h3 style="margin:0; font-size:15px;">{{ sub.name }}</h3>
+                        <span style="font-size:11px; color:var(--text-muted);">{{ sub.code }}</span>
+                    </div>
+                    <span style="font-size:12px; background:var(--primary-light); color:var(--primary); padding:3px 8px; border-radius:20px;">{{ sub.enrolled }} enrolled</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <div style="background:var(--bg-card); padding:10px; border-radius:8px; text-align:center;">
+                        <div style="font-size:18px; font-weight:700; color:var(--primary);">{{ sub.avg_marks }}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">Avg Marks</div>
+                    </div>
+                    <div style="background:var(--bg-card); padding:10px; border-radius:8px; text-align:center;">
+                        <div style="font-size:18px; font-weight:700; color:#10b981;">{{ sub.pass_rate }}%</div>
+                        <div style="font-size:11px; color:var(--text-muted);">Pass Rate</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Data Table Preview -->
+    {% if table %}
+    <div class="chart-card" style="margin-top:24px;">
+        <div class="chart-header">
+            <h2>📋 Dataset Preview</h2>
+        </div>
+        <div class="student-table-card" style="margin:0; box-shadow:none; padding:0; overflow-x:auto;">
+            {{ table|safe }}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- No data state -->
+    <div class="chart-card" style="padding:60px; text-align:center; color:var(--text-muted); margin-top:0;">
+        <div style="font-size:64px; margin-bottom:16px;">📭</div>
+        <h3 style="margin-bottom:8px;">No Student Data Yet</h3>
+        <p>Upload a CSV file above, or add students and their marks via the <a href="{% url 'students' %}">Students</a> section.</p>
+    </div>
+    {% endif %}
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{% if statistics %}
+{{ marks_data|json_script:"marks-data" }}
+{{ attendance_data|json_script:"attendance-data-ana" }}
+{{ grade_data|json_script:"grade-data-ana" }}
+{{ pass_fail_data|json_script:"pass-fail-ana" }}
+{{ attendance_marks_data|json_script:"scatter-data" }}
+
+<script>
+const PURPLE_PALETTE = ["rgba(124,58,237,0.8)","rgba(139,92,246,0.8)","rgba(167,139,250,0.8)","rgba(196,181,253,0.8)","rgba(91,33,182,0.8)","rgba(109,40,217,0.8)","rgba(76,29,149,0.8)"];
+
+const marksRaw      = JSON.parse(document.getElementById("marks-data").textContent);
+const attendanceRaw = JSON.parse(document.getElementById("attendance-data-ana").textContent);
+const gradeRaw      = JSON.parse(document.getElementById("grade-data-ana").textContent);
+const passFailRaw   = JSON.parse(document.getElementById("pass-fail-ana").textContent);
+const scatterRaw    = JSON.parse(document.getElementById("scatter-data").textContent);
+
+const marksChartData      = { labels: marksRaw.map((_,i) => "S" + (i+1)), values: marksRaw };
+const attendanceChartData = { labels: attendanceRaw.map((_,i) => "S" + (i+1)), values: attendanceRaw };
+const gradeChartData      = { labels: Object.keys(gradeRaw), values: Object.values(gradeRaw) };
+const passFailChartData   = { labels: Object.keys(passFailRaw), values: Object.values(passFailRaw) };
+
+const charts = {};
+
+function buildChart(id, type, labels, values, labelName) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (charts[id]) charts[id].destroy();
+    const isLinear = type === "bar" || type === "line";
+    charts[id] = new Chart(ctx, {
+        type: type,
+        data: {
+            labels: labels,
+            datasets: [{ label: labelName, data: values, backgroundColor: PURPLE_PALETTE, borderColor: "rgba(124,58,237,1)", borderWidth: 2, fill: type === "radar" || type === "line" }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "top" } }, scales: isLinear ? { y: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.05)" } } } : {} }
+    });
+}
+
+function changeAnalysisChart(id, type, data, labelName) { buildChart(id, type, data.labels, data.values, labelName); }
+function changeAnalysisChartObj(id, type, data) { buildChart(id, type, data.labels, data.values, "Students"); }
+
+buildChart("marksChart", "bar", marksChartData.labels, marksChartData.values, "Marks");
+buildChart("attendanceChart", "line", attendanceChartData.labels, attendanceChartData.values, "Attendance %");
+buildChart("gradeChart", "doughnut", gradeChartData.labels, gradeChartData.values, "Students");
+buildChart("passFailChart", "pie", passFailChartData.labels, passFailChartData.values, "Students");
+
+// Scatter
+let scatterChart = null;
+function buildScatter(type) {
+    const ctx = document.getElementById("scatterChart");
+    if (!ctx) return;
+    if (scatterChart) scatterChart.destroy();
+    scatterChart = new Chart(ctx, {
+        type: type,
+        data: {
+            datasets: [{ label: "Students", data: scatterRaw.map(s => ({ x: s.attendance, y: s.marks, r: type === "bubble" ? 8 : undefined })), backgroundColor: "rgba(124,58,237,0.65)", borderColor: "rgba(124,58,237,1)", borderWidth: 1.5 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "top" } }, scales: { x: { title: { display: true, text: "Attendance (%)" } }, y: { title: { display: true, text: "Marks (%)" } } } }
+    });
+}
+function switchScatterChart(type) { buildScatter(type); }
+buildScatter("scatter");
+</script>
+{% endif %}
+
+</body>
+</html>

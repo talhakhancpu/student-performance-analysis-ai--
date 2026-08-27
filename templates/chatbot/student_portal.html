@@ -1,0 +1,293 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Academic Portal | QA</title>
+    <link rel="stylesheet" href="{% static 'chatbot/style.css' %}">
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="logo">
+        <span class="qa-badge">QA</span>
+        <span class="logo-text">Academics</span>
+    </a>
+    <div class="nav-links">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'student_portal' %}" class="active">My Portal</a>
+        <a href="{% url 'generate_student_report' %}">📄 Report Card</a>
+    </div>
+    <div class="nav-auth">
+        <span class="user-role-badge student">🎓 Student</span>
+        <a href="{% url 'logout' %}" class="secondary-button" style="padding:7px 16px; font-size:13.5px;">Logout</a>
+    </div>
+</nav>
+
+<main class="dashboard-page">
+
+    <!-- Page Header -->
+    <div class="dashboard-title">
+        <div>
+            <h1>My Academic Portal</h1>
+            <p>Welcome back, <strong>{{ student.name }}</strong> — here's your complete academic overview.</p>
+        </div>
+        <a href="{% url 'generate_student_report' %}" class="primary-button">
+            📄 Download Report Card
+        </a>
+    </div>
+
+    <!-- Messages -->
+    {% for message in messages %}
+    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+
+    <!-- Student Info Cards -->
+    <section class="stats-grid">
+
+        <div class="dashboard-stat-card">
+            <div class="stat-icon">🪪</div>
+            <div>
+                <p>Student ID</p>
+                <h2>{{ student.student_id }}</h2>
+            </div>
+        </div>
+
+        <div class="dashboard-stat-card">
+            <div class="stat-icon">📅</div>
+            <div>
+                <p>Attendance</p>
+                <h2>{{ student.attendance }}%</h2>
+            </div>
+        </div>
+
+        <div class="dashboard-stat-card">
+            <div class="stat-icon">📊</div>
+            <div>
+                <p>Overall Percentage</p>
+                <h2>{{ student.marks }}%</h2>
+            </div>
+        </div>
+
+        <div class="dashboard-stat-card">
+            <div class="stat-icon">🏆</div>
+            <div>
+                <p>Overall Grade</p>
+                <h2>{{ student.grade|default:"N/A" }}</h2>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- Subject Marks Table + Chart side by side -->
+    <section class="two-col-layout">
+
+        <!-- Subject Breakdown Table -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2>📚 Subject-Wise Results</h2>
+                <span>{{ student.total_marks }} / {{ student.max_total_marks }} Total Marks</span>
+            </div>
+
+            {% if subject_marks %}
+            <div class="student-table-card" style="margin:0; box-shadow:none; padding:0;">
+                <table class="student-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Code</th>
+                            <th>Marks</th>
+                            <th>Max</th>
+                            <th>Grade</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sm in subject_marks %}
+                        <tr>
+                            <td><strong>{{ sm.subject.name }}</strong></td>
+                            <td><span style="font-size:12px; color:var(--text-muted);">{{ sm.subject.code }}</span></td>
+                            <td><strong>{{ sm.marks_obtained }}</strong></td>
+                            <td>{{ sm.subject.max_marks }}</td>
+                            <td>
+                                <span class="grade-badge grade-{{ sm.grade }}">{{ sm.grade|default:"—" }}</span>
+                            </td>
+                            <td>
+                                {% if sm.marks_obtained >= sm.subject.pass_marks %}
+                                    <span class="status-badge pass">✅ Pass</span>
+                                {% else %}
+                                    <span class="status-badge fail">❌ Fail</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: var(--primary-bg); color: var(--primary-dark); font-weight:700;">
+                            <td colspan="2">Total</td>
+                            <td>{{ student.total_marks }}</td>
+                            <td>{{ student.max_total_marks }}</td>
+                            <td colspan="2">{{ student.marks }}% — Grade {{ student.grade|default:"N/A" }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div style="padding:40px; text-align:center; color:var(--text-muted);">
+                <div style="font-size:48px; margin-bottom:12px;">📭</div>
+                <p>No subject marks have been entered yet. Check back after your teacher enters your marks.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Performance Chart -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2>📈 Performance Chart</h2>
+                <div class="chart-type-controls">
+                    <select class="chart-type-select" onchange="changeMyChart(this.value)">
+                        <option value="bar">Bar Chart</option>
+                        <option value="radar">Radar Chart</option>
+                        <option value="polarArea">Polar Area</option>
+                        <option value="line">Line Chart</option>
+                    </select>
+                </div>
+            </div>
+
+            {% if subject_marks %}
+            <div style="position:relative; height:320px;">
+                <canvas id="myPerformanceChart"></canvas>
+            </div>
+            {% else %}
+            <div style="padding:60px; text-align:center; color:var(--text-muted);">
+                <div style="font-size:48px; margin-bottom:12px;">📊</div>
+                <p>Chart will appear once marks are entered.</p>
+            </div>
+            {% endif %}
+        </div>
+
+    </section>
+
+    <!-- Additional Info -->
+    <section class="stats-grid" style="margin-top:0;">
+        {% if student.study_hours %}
+        <div class="dashboard-stat-card">
+            <div class="stat-icon">📖</div>
+            <div>
+                <p>Study Hours/Day</p>
+                <h2>{{ student.study_hours }}h</h2>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if student.assignment_score %}
+        <div class="dashboard-stat-card">
+            <div class="stat-icon">📝</div>
+            <div>
+                <p>Assignment Score</p>
+                <h2>{{ student.assignment_score }}</h2>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if student.quiz_score %}
+        <div class="dashboard-stat-card">
+            <div class="stat-icon">🧪</div>
+            <div>
+                <p>Quiz Score</p>
+                <h2>{{ student.quiz_score }}</h2>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if student.previous_marks %}
+        <div class="dashboard-stat-card">
+            <div class="stat-icon">📜</div>
+            <div>
+                <p>Previous Marks</p>
+                <h2>{{ student.previous_marks }}</h2>
+            </div>
+        </div>
+        {% endif %}
+    </section>
+
+</main>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{{ sub_labels_json|json_script:"sub-labels" }}
+{{ sub_scores_json|json_script:"sub-scores" }}
+{{ sub_max_json|json_script:"sub-max" }}
+
+<script>
+const subLabels = JSON.parse(document.getElementById("sub-labels").textContent);
+const subScores = JSON.parse(document.getElementById("sub-scores").textContent);
+const subMax    = JSON.parse(document.getElementById("sub-max").textContent);
+
+const PURPLE_SHADES = [
+    "rgba(124,58,237,0.8)",
+    "rgba(139,92,246,0.8)",
+    "rgba(167,139,250,0.8)",
+    "rgba(196,181,253,0.8)",
+    "rgba(91,33,182,0.8)",
+    "rgba(109,40,217,0.8)"
+];
+
+let myChart = null;
+
+function buildMyChart(type) {
+    const ctx = document.getElementById("myPerformanceChart");
+    if (!ctx) return;
+    if (myChart) myChart.destroy();
+
+    const isRadarOrPolar = type === "radar" || type === "polarArea";
+
+    myChart = new Chart(ctx, {
+        type: type,
+        data: {
+            labels: subLabels,
+            datasets: [
+                {
+                    label: "My Marks",
+                    data: subScores,
+                    backgroundColor: PURPLE_SHADES,
+                    borderColor: "rgba(124,58,237,1)",
+                    borderWidth: 2,
+                    fill: isRadarOrPolar
+                },
+                ...(!isRadarOrPolar ? [{
+                    label: "Max Marks",
+                    data: subMax,
+                    backgroundColor: "rgba(196,181,253,0.35)",
+                    borderColor: "rgba(167,139,250,0.7)",
+                    borderWidth: 1,
+                    fill: false
+                }] : [])
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: "top" }
+            }
+        }
+    });
+}
+
+function changeMyChart(type) {
+    buildMyChart(type);
+}
+
+if (subLabels.length > 0) {
+    buildMyChart("bar");
+}
+</script>
+
+</body>
+</html>

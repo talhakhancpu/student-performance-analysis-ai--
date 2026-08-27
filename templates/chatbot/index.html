@@ -1,0 +1,217 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q | Academic Performance & Analytics</title>
+    <link rel="stylesheet" href="{% static 'chatbot/style.css' %}">
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="{% url 'home' %}" class="logo">
+            <span class="qa-badge">QA</span>
+            <span class="logo-text">Academics</span>
+        </a>
+
+        <div class="nav-links">
+            <a href="{% url 'home' %}" class="active">Home</a>
+
+            {% if user.is_authenticated %}
+                {% if user.profile.role == 'student' %}
+                    <a href="{% url 'student_portal' %}">My Portal</a>
+                    <a href="{% url 'generate_student_report' %}">My Report Card</a>
+                {% else %}
+                    <a href="{% url 'dashboard' %}">Dashboard</a>
+                    <a href="{% url 'students' %}">Students</a>
+                    <a href="{% url 'manage_marks' %}">Manage Marks</a>
+                    <a href="{% url 'analysis' %}">Analytics</a>
+                    <a href="{% url 'prediction' %}">ML Prediction</a>
+                    <a href="{% url 'reports' %}">Reports</a>
+                {% endif %}
+            {% else %}
+                <a href="#roles">Portals</a>
+                <a href="#features">Features</a>
+            {% endif %}
+        </div>
+
+        <div class="nav-auth">
+            {% if user.is_authenticated %}
+                <span class="user-role-badge {{ user.profile.role }}">
+                    {% if user.profile.role == 'admin' %}👑 Admin
+                    {% elif user.profile.role == 'teacher' %}👨‍🏫 Teacher
+                    {% else %}🎓 Student{% endif %}
+                </span>
+                <a href="{% url 'logout' %}" class="secondary-button" style="padding: 7px 16px; font-size: 13.5px;">Logout</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="secondary-button" style="padding: 7px 16px; font-size: 13.5px;">Login</a>
+                <a href="{% url 'register' %}" class="primary-button" style="padding: 7px 18px; font-size: 13.5px;">Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Main Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-pill">
+                <span>✨ Advanced Academic Intelligence</span>
+            </div>
+
+            <h1>
+                
+                <span>QA Performance Analytics</span>
+            </h1>
+
+            <p>
+                A clean, modern platform for multi-subject tracking, automated grading, dynamic visual analytics, and machine learning grade predictions.
+            </p>
+
+            <div class="hero-buttons">
+                {% if user.is_authenticated %}
+                    {% if user.profile.role == 'student' %}
+                        <a href="{% url 'student_portal' %}" class="primary-button">
+                            🚀 Go to My Portal
+                        </a>
+                    {% else %}
+                        <a href="{% url 'dashboard' %}" class="primary-button">
+                            📊 Open Dashboard
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'login' %}" class="primary-button">
+                        🚀 Get Started Now
+                    </a>
+                    <a href="{% url 'register' %}" class="secondary-button">
+                        Create Free Account
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Role-Based Portals Section -->
+    <section class="roles-section" id="roles">
+        <div class="section-header">
+            <h2>Dedicated Portals For Everyone</h2>
+            
+        </div>
+
+        <div class="roles-grid">
+            <!-- Student Portal Card -->
+            <div class="role-card">
+                <div class="role-icon">🎓</div>
+                <h3>Student Portal</h3>
+                
+                <ul>
+                    <li>Personal subject-wise mark sheets</li>
+                    <li>Attendance & overall percentage</li>
+                    <li>AI performance forecast</li>
+                    <li>1-Click official PDF report card</li>
+                </ul>
+                {% if user.is_authenticated and user.profile.role == 'student' %}
+                    <a href="{% url 'student_portal' %}" class="primary-button">Access My Portal</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="secondary-button">Student Login</a>
+                {% endif %}
+            </div>
+
+            <!-- Teacher Portal Card -->
+            <div class="role-card">
+                <div class="role-icon">👨‍🏫</div>
+                <h3>Teacher Portal</h3>
+                
+                <ul>
+                    <li>Multi-subject marks entry & auto totals</li>
+                    <li>Subject-by-subject comparative analysis</li>
+                    <li>ML grade prediction engine</li>
+                    <li>Individual & Class PDF reports</li>
+                </ul>
+                {% if user.is_authenticated and user.profile.role == 'teacher' %}
+                    <a href="{% url 'dashboard' %}" class="primary-button">Teacher Dashboard</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="secondary-button">Teacher Login</a>
+                {% endif %}
+            </div>
+
+            <!-- Admin Portal Card -->
+            <div class="role-card">
+                <div class="role-icon">👑</div>
+                <h3>Administrator</h3>
+                
+                <ul>
+                    <li>Add, edit, & delete student profiles</li>
+                    <li>Manage curriculum subjects</li>
+                    <li>Batch CSV dataset analysis</li>
+                    <li>Full system oversight</li>
+                </ul>
+                {% if user.is_authenticated and user.profile.role == 'admin' %}
+                    <a href="{% url 'dashboard' %}" class="primary-button">Admin Console</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="secondary-button">Admin Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Features Section -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <h2>Key Capabilities</h2>
+            <p>Everything you need to evaluate, monitor, and improve academic outcomes.</p>
+        </div>
+
+        <div class="feature-container">
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <h3>Multi-Subject Grading</h3>
+                
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3>Dynamic Visualizations</h3>
+                
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3>ML Grade Prediction</h3>
+        
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📄</div>
+                <h3>Branded PDF Reports</h3>
+                
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Assistant Floating Widget -->
+     
+    <div class="chat-container">
+        {% csrf_token %}
+        <div class="chat-header">
+            <span>🤖 QA AI Assistant</span>
+        </div>
+
+        <div class="chat-box" id="chat-box">
+            <div class="bot-message">
+                Hello! I am your QA Academic Assistant. How can I help you today?
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Ask about grades, subjects, reports...">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script src="{% static 'chatbot/script.js' %}"></script>
+</body>
+
+</html>

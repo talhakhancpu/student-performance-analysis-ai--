@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | QA Academics</title>
+    <link rel="stylesheet" href="{% static 'chatbot/style.css' %}">
+</head>
+<body>
+
+<div class="auth-page">
+    <div class="auth-card">
+
+        <!-- Logo -->
+        <div class="auth-logo">
+            <a href="{% url 'home' %}" class="logo" style="justify-content:center; margin-bottom:8px;">
+                <span class="qa-badge">QA</span>
+                <span class="logo-text">Academics</span>
+            </a>
+            <p style="color:var(--text-muted); font-size:14px; margin:0;">Sign in to your account</p>
+        </div>
+
+        <!-- Error Message -->
+        {% if error %}
+        <div class="alert alert-error">
+            <span>⚠️</span> {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Messages -->
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+
+        <form method="POST" autocomplete="on">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter your username" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            </div>
+
+            <button type="submit" class="primary-button" style="width:100%; margin-top:8px;">
+                🔐 Sign In
+            </button>
+        </form>
+
+        <p class="auth-footer">
+            Don't have an account?
+            <a href="{% url 'register' %}">Create one free</a>
+        </p>
+
+        <!-- Demo Accounts Hint -->
+        <div style="margin-top: 18px; padding: 12px; background: var(--primary-subtle); border: 1px solid var(--border-purple); border-radius: 8px; font-size: 12px; color: var(--text-main); text-align: left;">
+            <strong style="color: var(--primary-dark);">🔑 Quick Demo Logins:</strong>
+            <div style="display: grid; grid-template-columns: 1fr; gap: 4px; margin-top: 6px; font-size: 11.5px;">
+                <div>👑 <b>Admin:</b> <code>admin</code> / <code>admin123</code></div>
+                <div>👨‍🏫 <b>Teacher:</b> <code>teacher</code> / <code>teacher123</code></div>
+                <div>🎓 <b>Student:</b> <code>sarah</code> / <code>student123</code></div>
+            </div>
+        </div>
+
+        <p class="auth-footer" style="margin-top:12px;">
+            <a href="{% url 'home' %}">← Back to Home</a>
+        </p>
+
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,264 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Marks | QA</title>
+    <link rel="stylesheet" href="{% static 'chatbot/style.css' %}">
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="logo">
+        <span class="qa-badge">QA</span>
+        <span class="logo-text">Academics</span>
+    </a>
+    <div class="nav-links">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'dashboard' %}">Dashboard</a>
+        <a href="{% url 'students' %}">Students</a>
+        <a href="{% url 'manage_marks' %}" class="active">Manage Marks</a>
+        <a href="{% url 'analysis' %}">Analytics</a>
+        <a href="{% url 'reports' %}">Reports</a>
+    </div>
+    <div class="nav-auth">
+        {% if user.profile.role == 'admin' %}
+            <span class="user-role-badge admin">👑 Admin</span>
+        {% else %}
+            <span class="user-role-badge teacher">👨‍🏫 Teacher</span>
+        {% endif %}
+        <a href="{% url 'logout' %}" class="secondary-button" style="padding:7px 16px; font-size:13.5px;">Logout</a>
+    </div>
+</nav>
+
+<main class="dashboard-page">
+
+    <div class="dashboard-title">
+        <div>
+            <h1>📝 Manage Student Marks</h1>
+            <p>Select a student, enter subject marks, and save. Totals & grades calculate automatically.</p>
+        </div>
+        <!-- Add Subject button for teacher/admin -->
+        <button class="primary-button" onclick="toggleSubjectModal()">
+            ➕ Add Subject
+        </button>
+    </div>
+
+    <!-- Messages -->
+    {% for message in messages %}
+    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+
+    <!-- Main layout: Student sidebar + Marks form -->
+    <div class="marks-layout">
+
+        <!-- Left: Student Selector -->
+        <div class="marks-sidebar">
+            <div class="chart-card" style="padding:0; overflow:hidden;">
+                <div style="padding:16px 20px; border-bottom:1px solid var(--border);">
+                    <h3 style="margin:0; font-size:15px;">🎓 Select Student</h3>
+                </div>
+                <div style="overflow-y:auto; max-height:520px;">
+                    {% for student in students %}
+                    <a href="{% url 'student_marks' student.id %}"
+                       class="student-selector-item {% if selected_student and selected_student.id == student.id %}active{% endif %}">
+                        <div style="font-weight:600; font-size:14px;">{{ student.name }}</div>
+                        <div style="font-size:12px; color:var(--text-muted);">{{ student.student_id }} &mdash; {{ student.grade|default:"N/A" }}</div>
+                    </a>
+                    {% empty %}
+                    <div style="padding:24px; text-align:center; color:var(--text-muted); font-size:14px;">
+                        No students yet. Add one first.
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if is_admin %}
+                <div style="padding:12px 16px; border-top:1px solid var(--border);">
+                    <a href="{% url 'add_student' %}" class="secondary-button" style="width:100%; text-align:center; display:block;">
+                        + Add Student
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right: Marks entry form -->
+        <div class="marks-main">
+
+            {% if selected_student %}
+            <!-- Student Summary Header -->
+            <div class="chart-card" style="margin-bottom:20px;">
+                <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+                    <div style="width:56px; height:56px; border-radius:50%; background:var(--primary-subtle); border:1px solid var(--border-purple); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">🎓</div>
+                    <div style="flex:1;">
+                        <h2 style="margin:0 0 2px; font-size:20px;">{{ selected_student.name }}</h2>
+                        <p style="margin:0; color:var(--text-muted); font-size:13px;">ID: {{ selected_student.student_id }} | Attendance: {{ selected_student.attendance }}%</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:28px; font-weight:700; color:var(--primary);">{{ selected_student.marks }}%</div>
+                        <div>
+                            <span class="grade-badge grade-{{ selected_student.grade }}">{{ selected_student.grade|default:"N/A" }}</span>
+                        </div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+                            {{ selected_student.total_marks }} / {{ selected_student.max_total_marks }} marks
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Marks Entry Form -->
+            <div class="chart-card">
+                <div class="chart-header" style="margin-bottom:16px;">
+                    <h2>Subject Marks Entry</h2>
+                    <span>{{ subjects.count }} subject{{ subjects.count|pluralize }}</span>
+                </div>
+
+                {% if subjects %}
+                <form method="POST" action="{% url 'student_marks' selected_student.id %}">
+                    {% csrf_token %}
+
+                    <div class="student-table-card" style="margin:0; box-shadow:none; padding:0;">
+                        <table class="student-table">
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Code</th>
+                                    <th>Max Marks</th>
+                                    <th>Pass Marks</th>
+                                    <th>Marks Obtained</th>
+                                    <th>Remarks</th>
+                                    {% if is_admin %}<th>Actions</th>{% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sm in student_subject_marks %}
+                                <tr>
+                                    <td><strong>{{ sm.subject.name }}</strong></td>
+                                    <td><span style="font-size:12px; color:var(--text-muted);">{{ sm.subject.code }}</span></td>
+                                    <td>{{ sm.subject.max_marks }}</td>
+                                    <td>{{ sm.subject.pass_marks }}</td>
+                                    <td>
+                                        <input
+                                            type="number"
+                                            name="mark_{{ sm.subject.id }}"
+                                            value="{{ sm.marks_obtained }}"
+                                            min="0"
+                                            max="{{ sm.subject.max_marks }}"
+                                            step="0.5"
+                                            style="width:90px; padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:14px;"
+                                            required
+                                        >
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            name="remarks_{{ sm.subject.id }}"
+                                            value="{{ sm.remarks }}"
+                                            placeholder="Optional note..."
+                                            style="width:140px; padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px;"
+                                        >
+                                    </td>
+                                    {% if is_admin %}
+                                    <td>
+                                        <a href="{% url 'delete_subject' sm.subject.id %}"
+                                           onclick="return confirm('Delete subject {{ sm.subject.name }}? All marks will be lost.')"
+                                           style="color:#ef4444; font-size:13px; text-decoration:none;">
+                                            🗑 Delete
+                                        </a>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">
+                        <button type="submit" class="primary-button">
+                            💾 Save & Calculate Totals
+                        </button>
+                        <a href="{% url 'generate_student_report' %}?student_id={{ selected_student.id }}" class="secondary-button">
+                            📄 Export Report
+                        </a>
+                    </div>
+                </form>
+
+                {% else %}
+                <div style="padding:40px; text-align:center; color:var(--text-muted);">
+                    <div style="font-size:48px; margin-bottom:12px;">📚</div>
+                    <p>No subjects added yet. Click <strong>"Add Subject"</strong> above to create the first subject.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% else %}
+            <div class="chart-card" style="padding:60px; text-align:center; color:var(--text-muted);">
+                <div style="font-size:64px; margin-bottom:16px;">🎓</div>
+                <h3 style="margin-bottom:8px;">Select a Student</h3>
+                <p>Choose a student from the left sidebar to view and edit their subject marks.</p>
+            </div>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</main>
+
+<!-- Add Subject Modal -->
+<div id="subject-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>➕ Add New Subject</h3>
+            <button class="modal-close" onclick="toggleSubjectModal()">✕</button>
+        </div>
+
+        <form method="POST" action="{% url 'add_subject' %}">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label>Subject Name *</label>
+                <input type="text" name="name" placeholder="e.g. Mathematics" required>
+            </div>
+
+            <div class="form-group">
+                <label>Subject Code</label>
+                <input type="text" name="code" placeholder="e.g. MATH-101">
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label>Max Marks</label>
+                    <input type="number" name="max_marks" value="100" min="1" step="1">
+                </div>
+                <div class="form-group">
+                    <label>Pass Marks</label>
+                    <input type="number" name="pass_marks" value="50" min="0" step="1">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:8px;">
+                <button type="button" class="secondary-button" onclick="toggleSubjectModal()">Cancel</button>
+                <button type="submit" class="primary-button">➕ Add Subject</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleSubjectModal() {
+    const modal = document.getElementById("subject-modal");
+    modal.style.display = modal.style.display === "none" ? "flex" : "none";
+}
+
+// Close modal clicking outside
+document.getElementById("subject-modal").addEventListener("click", function(e) {
+    if (e.target === this) toggleSubjectModal();
+});
+</script>
+
+</body>
+</html>

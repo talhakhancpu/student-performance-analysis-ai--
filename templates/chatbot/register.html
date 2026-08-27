@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Student Account | QA Academics</title>
+    <link rel="stylesheet" href="{% static 'chatbot/style.css' %}">
+</head>
+<body>
+
+<div class="auth-page">
+    <div class="auth-card">
+
+        <!-- Logo -->
+        <div class="auth-logo">
+            <a href="{% url 'home' %}" class="logo" style="justify-content:center; margin-bottom:8px;">
+                <span class="qa-badge">QA</span>
+                <span class="logo-text">Academics</span>
+            </a>
+            <p style="color:var(--text-muted); font-size:14px; margin:0;">Create your student account</p>
+        </div>
+
+        <!-- Role Info Banner -->
+        <div style="display:flex; align-items:center; gap:10px; background:var(--primary-subtle); border:1px solid var(--border-purple); border-radius:8px; padding:10px 14px; margin-bottom:18px; font-size:13px;">
+            <span style="font-size:20px;">🎓</span>
+            <div>
+                <strong style="color:var(--primary-dark);">Student Registration</strong>
+                <p style="margin:0; color:var(--text-muted); font-size:12px;">Public registration is for students only. Teacher &amp; Admin accounts are created by the system administrator.</p>
+            </div>
+        </div>
+
+        <!-- Error -->
+        {% if error %}
+        <div class="alert alert-error">
+            <span>⚠️</span> {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" autocomplete="on">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Choose a username" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label for="full_name">Full Name</label>
+                <input type="text" id="full_name" name="full_name" placeholder="Your full name (optional)">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="your@email.com">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password <span style="color:var(--text-muted); font-size:12px;">(min. 6 characters)</span></label>
+                <input type="password" id="password" name="password" placeholder="Choose a strong password" required minlength="6">
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter your password" required>
+            </div>
+
+            <!-- Role is always student — hidden field, NOT a dropdown -->
+            <input type="hidden" name="role" value="student">
+
+            <button type="submit" class="primary-button" style="width:100%; margin-top:8px;">
+                🎓 Create Student Account
+            </button>
+        </form>
+
+        <p class="auth-footer">
+            Already have an account?
+            <a href="{% url 'login' %}">Sign in</a>
+        </p>
+
+        <p class="auth-footer" style="margin-top:4px;">
+            <a href="{% url 'home' %}">← Back to Home</a>
+        </p>
+
+    </div>
+</div>
+
+</body>
+</html>
